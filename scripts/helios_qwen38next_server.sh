@@ -50,15 +50,19 @@ REASONING_EFFORT=${REASONING_EFFORT:-}
 # few dozen tokens. Pass --no-mtp for bit-exact greedy output; it also re-enables
 # two-sequence generation (--pair), which is refused while MTP is on.
 MTP=${MTP:-1}
-# Cross-request prefix caching. OFF by default (PREFIX_CACHE=1, or
-# HELIOS_PREFIX_CACHE=1 in the environment, turns it on). There is no CLI flag
-# for it. Snapshots live in pinned HOST memory, so they cost no VRAM, and the
-# ring is partitioned per sequence slot - a conversation can only resume from
-# its own captures. The snapshot interval is --chunk (default 1024) and the ring
-# depth is HELIOS_PREFIX_SLOTS (default 8), so a lower --chunk means less
-# recompute after a mid-history divergence. It refuses to run with HELIOS_QSA,
-# and disables itself if the pinned allocation fails.
-PREFIX_CACHE=${PREFIX_CACHE:-0}
+# Cross-request prefix caching. ON by default: without it every request re-ingests the whole
+# conversation, so an agent's second turn on a 120k history costs a full ~50 s prefill before it
+# produces a token. With it on, a turn that continues the resident history resumes from the newest
+# capture - measured 5.4x on a growing 3-turn conversation (3.96 s cold, then 0.65 s per turn, 8192
+# of 8819 tokens reused).
+#
+# There is no CLI flag for it; this variable and HELIOS_PREFIX_CACHE both work, and the engine reads
+# the latter. Snapshots live in pinned HOST memory, so they cost no VRAM. The ring is partitioned per
+# sequence slot - a conversation can only resume from its own captures. The snapshot interval is
+# --chunk (default 1024) and the ring depth is HELIOS_PREFIX_SLOTS (default 8), so a lower --chunk
+# means less recompute after a mid-history divergence. It refuses to run with HELIOS_QSA, and
+# disables itself if the pinned allocation fails.
+PREFIX_CACHE=${PREFIX_CACHE:-1}
 # Default output length for requests that omit max_tokens. The engine has no
 # other output cap.
 MAX_TOKENS=${MAX_TOKENS:-32768}

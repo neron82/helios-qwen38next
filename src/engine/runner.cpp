@@ -2239,7 +2239,8 @@ bool Runner::generate_pair(const std::vector<int>& pa, const std::vector<int>& p
 }
 
 std::vector<int> Runner::generate(const std::vector<int>& prompt, const GenParams& p,
-                                  const std::function<bool(int)>& on_token) {
+                                  const std::function<bool(int)>& on_token,
+                                  const std::function<bool()>& should_abort) {
   if (prompt.empty()) return {};
   const Config& c = m_->cfg;
   // Against the SLOT's capacity, not the cache's: with N slots a conversation may only use its own
@@ -2255,7 +2256,15 @@ std::vector<int> Runner::generate(const std::vector<int>& prompt, const GenParam
   // and the full prefill it has always been; with it on, a prompt sharing a prefix with the resident
   // one resumes from the newest capture at or before the divergence point.
   const int resume = prefix_begin(prompt);
-  prefill(prompt, resume);
+  if (!prefill(prompt, resume, should_abort)) {
+    // The prefill was cancelled part-way. The caches genuinely hold prompt[0, pos_), so that - and
+    // not the whole prompt - is what the history may claim: recording the prompt we were asked for
+    // would make the next request's prefix_match() agree with tokens that were never computed, and
+    // it would resume from a capture over KV rows that do not exist. The honest, shorter history
+    // also means the next request simply prefills the remainder.
+    hist_tokens_.assign(prompt.begin(), prompt.begin() + std::min(prompt.size(), (size_t)pos_));
+    return {};
+  }
   hist_tokens_ = prompt;
 
   Sampler smp;
@@ -2343,11 +2352,16 @@ std::vector<int> Runner::generate(const std::vector<int>& prompt, const GenParam
   return out;
 }
 
-void Runner::prefill(const std::vector<int>& ids, int from) {
+bool Runner::prefill(const std::vector<int>& ids, int from,
+                     const std::function<bool()>& should_abort) {
   const double t0 = now_ms();
   // `off` indexes the WHOLE prompt, not the remainder, so a capture taken at a chunk boundary can
   // read the prompt tokens on either side of it - which is what restores the PLE's n-gram window.
   for (size_t off = (size_t)from; off < ids.size(); off += (size_t)max_chunk_) {
+    // Polled before the chunk, not after: a cancelled request should not have another chunk of GPU
+    // work started for it. A 120k prefill is ~50 s of compute that produces nothing observable, so
+    // without this the client can hang up long before the GPUs notice.
+    if (should_abort && should_abort()) { sync_all(); return false; }
     const int n = (int)std::min((size_t)max_chunk_, ids.size() - off);
     std::vector<int> chunk(ids.begin() + off, ids.begin() + off + n);
     run_chunk(chunk, pos_);
@@ -2365,6 +2379,7 @@ void Runner::prefill(const std::vector<int>& ids, int from) {
     last_committed_ = ids.back();   // final prompt token sits at pos_-1
     capture_carry();
   }
+  return true;
 }
 
 void Runner::decode(const std::vector<int>& ids) {

@@ -14190,3 +14190,52 @@ The lesson is the same one this file keeps hitting, in a new costume: **the feat
 compiled, it had a startup banner printing plausible numbers ("8 capture x 111 MB"), and it had never
 been run.** A banner that reports a *computed* total is not evidence that a single capture happened.
 19/19 tests and the reference digest `3aaa5693` are unchanged.
+
+### Two server defects found by running the engine as a real client would
+
+Reported from a live agent session, not from a benchmark: cancelling a request did not stop the
+GPUs, and nothing was being reused between turns.
+
+**1. Cancel did not stop the prefill.** Liveness was checked in exactly one place - inside the
+per-token emit callback, which only fires once tokens exist:
+
+    if (emit && !emit(d)) return false;   // client gone: stop decoding for nobody
+
+A prefill produces no tokens, so a 120k prompt is ~50 s during which the server cannot notice
+anything. The client hung up, the prefill ran to completion, and generation stopped at the first
+token - exactly the reported behaviour.
+
+`Runner::prefill` now takes a `should_abort` predicate, polled **before** each chunk so a cancelled
+request does not have another chunk of GPU work started for it, and the SSE path supplies a probe
+that heartbeats a `: keepalive` comment and then consults `sink.is_writable()`. Measured, streaming
+request cancelled 4 s into a ~40 s prefill with both GPUs at 100%: **idle 2.1 s later**, versus
+running the full prompt.
+
+**2. A cancelled prefill must not claim history it never computed.** `generate()` assigned
+`hist_tokens_ = prompt` unconditionally after prefill. Aborting part-way would have left the engine
+asserting that the whole prompt is resident, so the next request's `prefix_match` would agree with
+tokens that were never run and it would resume from a capture over KV rows that do not exist - a
+silently wrong answer, not a crash. It now records `prompt[0, pos_)`, which is what the caches
+genuinely hold, so the next request simply prefills the remainder.
+
+**3. The prefix cache was on in the engine and off in the launch script.** `HELIOS_PREFIX_CACHE`
+defaults to 0 and my server script passed that through, so every turn re-ingested the whole
+conversation. Measured through the server, 13.5k-token conversation:
+
+    turn 1 (cold)  1.46 s
+    turn 2         0.43 s     prefix_last_resume = 13312
+    turn 3         0.45 s
+
+and from the CLI on an 8810-token conversation, 3 growing turns: 3.96 s cold then **0.65 s** per
+turn (5.4x), 8192 of 8819 tokens reused. The script now defaults it on.
+
+**A wrong turn, and what it cost.** I first converted the buffered (non-streaming) path to a chunked
+provider so it could get a DataSink too. That was wrong twice over: httplib reports `is_writable()`
+false for a sink that has not written yet, so the probe aborted every buffered request immediately,
+and the SSE heartbeat was injected into a JSON body - a "Say hi" came back as 73,006 bytes of which
+the first few hundred parsed as JSON. Reverted to `res.set_content`; the buffered path keeps its old
+behaviour and the limitation is real: **httplib offers no reliable liveness signal before the first
+write, so a buffered request still cannot be cancelled mid-prefill.** Streaming - what an agent
+actually uses - can and does. The invariant that makes the streaming probe safe (the first SSE chunk
+is sent before `generate()`) is now an explicit `wrote_once` guard, because trusting `is_writable()`
+before that point silently turns "cancel a long request" into "refuse every request".

@@ -105,9 +105,11 @@ demand rather than resident.
 - **Multi-token prediction (speculative decoding)**, on by default, with a draft head that taps the
   trunk's pre-collapse activation stream rather than re-reading the KV cache. Measured **+13.1%**
   greedy decode (see [MTP](#multi-token-prediction) — and read the caveat).
-- **Cross-request prefix caching** (`HELIOS_PREFIX_CACHE=1`): a re-sent prompt resumes from the
-  newest matching snapshot instead of prefilling from token 0. Measured **6.6×** on an 8810-token
-  prompt; snapshots live in pinned *host* memory, so they cost no VRAM.
+- **Cross-request prefix caching** (`HELIOS_PREFIX_CACHE=1`, and on by default in the launch
+  script): a prompt that continues the resident history resumes from the newest matching snapshot
+  instead of prefilling from token 0. Measured **3.2×** per continuing turn through the server and
+  **5.4×** on a growing 3-turn conversation; snapshots live in pinned *host* memory, so they cost
+  no VRAM.
 - **Gated DeltaNet recurrence** in both a serial and a chunked (WY representation) form, with a
   recurrent-state snapshot/rollback path for speculative verification.
 - **Qwen Sparse Attention** with a pooled block indexer, plus tensor-core prefill scoring.
@@ -205,7 +207,7 @@ there is no typo protection.
 | `HELIOS_MTP` | 1 | speculative decoding (`0` = `--no-mtp`) |
 | `HELIOS_SPEC_K` | 1 | draft depth, 1–7. **Leave at 1** — see [MTP](#multi-token-prediction) |
 | `HELIOS_MTP_CTX_LIMIT` | unlimited | position ceiling; `0` never speculates |
-| `HELIOS_PREFIX_CACHE` | 0 | cross-request prefix cache. No CLI flag exists |
+| `HELIOS_PREFIX_CACHE` | 0 (**1** in the launch script) | cross-request prefix cache. No CLI flag exists |
 | `HELIOS_PREFIX_SLOTS` | 8 | snapshots retained per sequence slot, 1–256 |
 | `HELIOS_PREFIX_DEBUG` | off | log the resume decision and the ring per request |
 | `HELIOS_SEQUENCES` | 1 | conversation slots, 1–64, then VRAM-clamped. Interleaved, not parallel |
@@ -250,7 +252,10 @@ bit-exact greedy output. Speculation is also **greedy-only** (`temperature == 0`
 
 ## Cross-request prefix caching
 
-`HELIOS_PREFIX_CACHE=1` (environment only — there is no flag). The KV rows and the Gated DeltaNet
+Off in the engine by default, **on in `scripts/helios_qwen38next_server.sh`** — without it every
+request re-ingests the whole conversation, so an agent's second turn on a long history pays a full
+prefill before it produces a token. It is environment-only (`HELIOS_PREFIX_CACHE=1`); there is no
+flag. The KV rows and the Gated DeltaNet
 recurrences are position-addressed, so a prompt that continues the resident history resumes inside
 it. The resume policy is isolated in `src/engine/prefix.hpp` as a pure function with its own unit
 test, because this is where a prefix cache goes wrong *quietly*: resuming past the shared prefix
@@ -285,6 +290,15 @@ worth a large engineering effort.
 
 ## Limitations and known characteristics
 
+- **Cancelling a streamed request stops the prefill within one chunk.** Liveness is polled before
+  each 1024-token prefill chunk, with an SSE `: keepalive` heartbeat so a dead peer becomes visible
+  to the socket at all; a request cancelled 4 s into a ~40 s prefill leaves the GPUs idle ~2 s later.
+  A **buffered** (`stream: false`) request cannot be cancelled mid-prefill — httplib offers no
+  reliable way to test a connection that has not written yet, and the engine does not guess. Use
+  streaming for interactive cancellation.
+- **A cancelled prefill records only what it computed.** If a prefill stops part-way, the resident
+  history is truncated to the position actually reached rather than the prompt that was requested,
+  so the next request cannot resume from KV rows that were never written.
 - **MTP changes the output.** Greedy text under speculation drifts from the non-speculative stream
   after a few dozen tokens. Use `--no-mtp` when bit-exactness matters.
 - **The batched GDN path is disabled.** All ten operations in a Gated DeltaNet layer are verified

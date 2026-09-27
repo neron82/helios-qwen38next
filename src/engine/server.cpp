@@ -369,9 +369,15 @@ int run_server(Runner& runner, Tokenizer& tk, const std::string& host, int port,
   // conversation, and acquiring one is what makes a follow-up turn land on its own state. Doing it
   // in one place is also what keeps the two handlers from drifting apart, since a handler that
   // forgot to switch would run a turn against whatever conversation the last request left bound.
+  // `should_abort` is polled once per prefill chunk, while the model is producing nothing at all.
+  // The per-token emit callback cannot cover that window: a 120k prefill is ~50 s of silent GPU
+  // work, so a client that hangs up in the middle of it is not noticed until the first token is
+  // produced. The caller supplies a liveness probe - for SSE that means a heartbeat write, which is
+  // what makes httplib notice a dead peer at all.
   auto generate = [&](const std::vector<int>& prompt, const GenParams& p, ChatRequest& req,
                       GenOutcome& out, int want_slot,
-                      std::function<bool(OutputParser::Delta&)> emit) -> bool {
+                      std::function<bool(OutputParser::Delta&)> emit,
+                      std::function<bool()> should_abort = nullptr) -> bool {
     // -1 here would collide with "round-robin", so the runner's out-of-range answer is mapped back
     // onto it explicitly rather than passed through.
     const int slot = runner.acquire_slot(want_slot);
@@ -407,7 +413,7 @@ int run_server(Runner& runner, Tokenizer& tk, const std::string& host, int port,
         if (emit && !emit(d)) return false;   // client gone: stop decoding for nobody
       }
       return true;
-    });
+    }, should_abort);
     std::vector<OutputParser::Delta> rest = parser.finish();
     for (auto& d : rest) { if (d.stop) { out.hit_stop = true; } if (emit) emit(d); }
     const ParsedOutput& parsed = parser.parsed();
@@ -497,6 +503,8 @@ int run_server(Runner& runner, Tokenizer& tk, const std::string& host, int port,
         "text/event-stream",
         [&, prompt, req, id, created, want_usage, want_slot](size_t, httplib::DataSink& sink) mutable {
           std::lock_guard<std::mutex> lock(gen_mu);
+          long long last_hb = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                  std::chrono::steady_clock::now().time_since_epoch()).count();
           // A write can keep succeeding for a long time after the client is gone: the kernel
           // accepts bytes into the socket send buffer before the RST arrives, so `write`'s return
           // value alone does not notice a dead client. Measured: aborting a 3000-token stream 1.5 s
@@ -505,10 +513,41 @@ int run_server(Runner& runner, Tokenizer& tk, const std::string& host, int port,
           // `is_writable()` is httplib's own liveness check on the connection, and it reflects the
           // closed socket as soon as the RST lands, so consult it before each token rather than
           // relying on the write to fail.
+          bool wrote_once = false;
           auto send = [&](const json& j) {
             if (!sink.is_writable()) return false;
             std::string s = "data: " + j.dump() + "\n\n";
-            return sink.write(s.data(), s.size());
+            if (!sink.write(s.data(), s.size())) return false;
+            wrote_once = true;
+            return true;
+          };
+          // Liveness DURING prefill. `is_writable()` only learns the peer is gone when the socket is
+          // polled or written, and a prefill writes nothing - so a client that cancels while a long
+          // prompt is being ingested is not noticed until the first token. An SSE comment line is a
+          // legal no-op that forces a write, so a heartbeat both keeps the connection warm and makes
+          // the dead peer visible to is_writable() a chunk from now. The probe runs once per
+          // 1024-token chunk, so a 50 s prefill is ~50 chances to notice.
+          //
+          // `wrote_once` matters: httplib reports is_writable() false for a sink that has not
+          // written yet, so trusting it before the first write aborts the request immediately. The
+          // first SSE chunk is sent before generate() is called, so by prefill time this is
+          // normally already true - the guard is what keeps a reordering from silently turning
+          // "cancel a long request" into "refuse every request".
+          auto prefill_probe = [&]() {
+            if (!wrote_once) return false;
+            const char* hb = getenv("HELIOS_HB_MS");
+            const long hb_ms = hb ? atol(hb) : 500;
+            if (!sink.is_writable()) return true;
+            const auto t = std::chrono::steady_clock::now();
+            const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                t.time_since_epoch()).count();
+            if (ms - last_hb < hb_ms) return false;
+            last_hb = ms;
+            // ": keepalive\n\n" is an SSE comment: ignored by every conformant client, including
+            // OpenAI SDKs, so this is invisible to the caller.
+            static const char kBeat[] = ": keepalive\n\n";
+            sink.write(kBeat, sizeof(kBeat) - 1);
+            return !sink.is_writable();
           };
           json base{{"id", id}, {"object", "chat.completion.chunk"},
                     {"created", created}, {"model", g_opts.model_id}};
@@ -587,7 +626,7 @@ int run_server(Runner& runner, Tokenizer& tk, const std::string& host, int port,
               }
             }
             return alive;
-          })) {
+          }, prefill_probe)) {
             // The slot pin was out of range. Headers are already committed by the chunked provider
             // at this point, so the error is delivered in-band as SSE rather than as an HTTP status
             // that can no longer be sent - the client sees an error event instead of a hang.

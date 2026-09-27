@@ -36,7 +36,17 @@ public:
   void reset();
   // Prompt ingestion: processes ids[from..end) starting at the current position, filling every
   // state. `from` is the cross-request prefix-cache resume point (0 = the whole prompt).
-  void prefill(const std::vector<int>& ids, int from = 0);
+  //
+  // `should_abort` is polled once per chunk, BEFORE the chunk runs, so a caller whose client has
+  // gone does not have another chunk of GPU work started on its behalf. A 120k prefill is ~50 s of
+  // silent compute: without this the GPUs keep burning for the whole prompt and the cancellation
+  // only takes effect once the first token is produced.
+  //
+  // Returns false if it stopped early. pos_ then holds the position actually reached, and the
+  // caches genuinely hold ids[0, pos_), so a caller that records history must record THAT, not the
+  // prompt it was asked for.
+  bool prefill(const std::vector<int>& ids, int from = 0,
+               const std::function<bool()>& should_abort = nullptr);
   // Continuation: 1..k tokens appended at the current position.
   void decode(const std::vector<int>& ids);
   // Decode ONE token for each of two slots through a SINGLE forward. This is the whole point of
@@ -133,8 +143,12 @@ public:
                      std::vector<int>* out_a, std::vector<int>* out_b,
                      const std::function<bool(int)>& on_a = nullptr,
                      const std::function<bool(int)>& on_b = nullptr);
+  // `should_abort` is polled once per prefill chunk and lets a caller stop a request whose client
+  // has gone. It is separate from `on_token` because on_token only fires once tokens exist, and a
+  // long prefill produces none.
   std::vector<int> generate(const std::vector<int>& prompt, const GenParams& p,
-                            const std::function<bool(int)>& on_token = nullptr);
+                            const std::function<bool(int)>& on_token = nullptr,
+                            const std::function<bool()>& should_abort = nullptr);
 
   // ---- cross-request prefix cache (HELIOS_PREFIX_CACHE=1, default OFF) ----
   //
