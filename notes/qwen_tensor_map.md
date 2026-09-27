@@ -1,0 +1,344 @@
+# Qwen3.8-Flash-Next-exl3 tensor map (generated from the checkpoint headers)
+
+Roles the loader must implement. `L.N` below means `model.language_model.layers.N`.
+
+## Per-layer tensors (48 layers)
+
+- `(vision tower - NOT loaded)`
+  - count 987, dtype BF16,F16,I16,I32, shape [1152, 3, 2, 16, 16] [1152]
+- `L.N.attn_hyper_connection.block_inject_weight.weight`
+  - count 48, dtype F16, shape [4, 10240]
+- `L.N.attn_hyper_connection.hc_norm.weight`
+  - count 48, dtype F16, shape [10240]
+- `L.N.attn_hyper_connection.input_mix_weight_down.weight`
+  - count 48, dtype F16, shape [320, 10240]
+- `L.N.attn_hyper_connection.input_mix_weight_up.weight`
+  - count 48, dtype F16, shape [10240, 320]
+- `L.N.linear_attn.A_log`
+  - count 36, dtype BF16, shape [48]
+- `L.N.linear_attn.conv1d.weight`
+  - count 36, dtype BF16, shape [10240, 1, 4]
+- `L.N.linear_attn.dt_bias`
+  - count 36, dtype BF16, shape [48]
+- `L.N.linear_attn.in_proj_a.weight`
+  - count 36, dtype F16, shape [48, 2560]
+- `L.N.linear_attn.in_proj_b.weight`
+  - count 36, dtype F16, shape [48, 2560]
+- `L.N.linear_attn.in_proj_qkv.mul1`
+  - count 36, dtype I32, shape []
+- `L.N.linear_attn.in_proj_qkv.suh`
+  - count 36, dtype F16, shape [2560]
+- `L.N.linear_attn.in_proj_qkv.svh`
+  - count 36, dtype F16, shape [10240]
+- `L.N.linear_attn.in_proj_qkv.trellis`
+  - count 36, dtype I16, shape [160, 640, 64]
+- `L.N.linear_attn.in_proj_z.mul1`
+  - count 36, dtype I32, shape []
+- `L.N.linear_attn.in_proj_z.suh`
+  - count 36, dtype F16, shape [2560]
+- `L.N.linear_attn.in_proj_z.svh`
+  - count 36, dtype F16, shape [6144]
+- `L.N.linear_attn.in_proj_z.trellis`
+  - count 36, dtype I16, shape [160, 384, 64]
+- `L.N.linear_attn.norm.weight`
+  - count 36, dtype BF16, shape [128]
+- `L.N.linear_attn.out_proj.mul1`
+  - count 36, dtype I32, shape []
+- `L.N.linear_attn.out_proj.suh`
+  - count 36, dtype F16, shape [6144]
+- `L.N.linear_attn.out_proj.svh`
+  - count 36, dtype F16, shape [2560]
+- `L.N.linear_attn.out_proj.trellis`
+  - count 36, dtype I16, shape [384, 160, 64]
+- `L.N.mlp.experts.E.down_proj.mul1`
+  - count 24576, dtype I32, shape []
+- `L.N.mlp.experts.E.down_proj.suh`
+  - count 24576, dtype F16, shape [640]
+- `L.N.mlp.experts.E.down_proj.svh`
+  - count 24576, dtype F16, shape [2560]
+- `L.N.mlp.experts.E.down_proj.trellis`
+  - count 24576, dtype I16, shape [40, 160, 32]
+- `L.N.mlp.experts.E.gate_proj.mul1`
+  - count 24576, dtype I32, shape []
+- `L.N.mlp.experts.E.gate_proj.suh`
+  - count 24576, dtype F16, shape [2560]
+- `L.N.mlp.experts.E.gate_proj.svh`
+  - count 24576, dtype F16, shape [640]
+- `L.N.mlp.experts.E.gate_proj.trellis`
+  - count 24576, dtype I16, shape [160, 40, 32]
+- `L.N.mlp.experts.E.up_proj.mul1`
+  - count 24576, dtype I32, shape []
+- `L.N.mlp.experts.E.up_proj.suh`
+  - count 24576, dtype F16, shape [2560]
+- `L.N.mlp.experts.E.up_proj.svh`
+  - count 24576, dtype F16, shape [640]
+- `L.N.mlp.experts.E.up_proj.trellis`
+  - count 24576, dtype I16, shape [160, 40, 32]
+- `L.N.mlp.gate.weight`
+  - count 48, dtype F16, shape [512, 2560]
+- `L.N.mlp.shared_expert.down_proj.mul1`
+  - count 48, dtype I32, shape []
+- `L.N.mlp.shared_expert.down_proj.suh`
+  - count 48, dtype F16, shape [640]
+- `L.N.mlp.shared_expert.down_proj.svh`
+  - count 48, dtype F16, shape [2560]
+- `L.N.mlp.shared_expert.down_proj.trellis`
+  - count 48, dtype I16, shape [40, 160, 64]
+- `L.N.mlp.shared_expert.gate_proj.mul1`
+  - count 48, dtype I32, shape []
+- `L.N.mlp.shared_expert.gate_proj.suh`
+  - count 48, dtype F16, shape [2560]
+- `L.N.mlp.shared_expert.gate_proj.svh`
+  - count 48, dtype F16, shape [640]
+- `L.N.mlp.shared_expert.gate_proj.trellis`
+  - count 48, dtype I16, shape [160, 40, 64]
+- `L.N.mlp.shared_expert.up_proj.mul1`
+  - count 48, dtype I32, shape []
+- `L.N.mlp.shared_expert.up_proj.suh`
+  - count 48, dtype F16, shape [2560]
+- `L.N.mlp.shared_expert.up_proj.svh`
+  - count 48, dtype F16, shape [640]
+- `L.N.mlp.shared_expert.up_proj.trellis`
+  - count 48, dtype I16, shape [160, 40, 64]
+- `L.N.mlp.shared_expert_gate.weight`
+  - count 48, dtype F16, shape [1, 2560]
+- `L.N.mlp_hyper_connection.block_inject_weight.weight`
+  - count 48, dtype F16, shape [4, 10240]
+- `L.N.mlp_hyper_connection.hc_norm.weight`
+  - count 48, dtype F16, shape [10240]
+- `L.N.mlp_hyper_connection.input_mix_weight_down.weight`
+  - count 48, dtype F16, shape [320, 10240]
+- `L.N.mlp_hyper_connection.input_mix_weight_up.weight`
+  - count 48, dtype F16, shape [10240, 320]
+- `L.N.ple.conv1d.weight`
+  - count 1, dtype F16, shape [10240, 1, 4]
+- `L.N.ple.key_proj.weight`
+  - count 1, dtype F16, shape [10240, 2560]
+- `L.N.ple.norm_conv.weight`
+  - count 1, dtype BF16, shape [10240]
+- `L.N.ple.norm_key.weight`
+  - count 1, dtype BF16, shape [10240]
+- `L.N.ple.norm_query.weight`
+  - count 1, dtype BF16, shape [10240]
+- `L.N.ple.value_proj.weight`
+  - count 1, dtype F16, shape [2560, 2560]
+- `L.N.self_attn.indexer.index_qk_proj.mul1`
+  - count 12, dtype I32, shape []
+- `L.N.self_attn.indexer.index_qk_proj.suh`
+  - count 12, dtype F16, shape [2560]
+- `L.N.self_attn.indexer.index_qk_proj.svh`
+  - count 12, dtype F16, shape [640]
+- `L.N.self_attn.indexer.index_qk_proj.trellis`
+  - count 12, dtype I16, shape [160, 40, 32]
+- `L.N.self_attn.indexer.k_layernorm.weight`
+  - count 12, dtype BF16, shape [128]
+- `L.N.self_attn.indexer.q_layernorm.weight`
+  - count 12, dtype BF16, shape [128]
+- `L.N.self_attn.k_norm.weight`
+  - count 12, dtype BF16, shape [256]
+- `L.N.self_attn.k_proj.mul1`
+  - count 12, dtype I32, shape []
+- `L.N.self_attn.k_proj.suh`
+  - count 12, dtype F16, shape [2560]
+- `L.N.self_attn.k_proj.svh`
+  - count 12, dtype F16, shape [512]
+- `L.N.self_attn.k_proj.trellis`
+  - count 12, dtype I16, shape [160, 32, 64]
+- `L.N.self_attn.o_proj.mul1`
+  - count 12, dtype I32, shape []
+- `L.N.self_attn.o_proj.suh`
+  - count 12, dtype F16, shape [6144]
+- `L.N.self_attn.o_proj.svh`
+  - count 12, dtype F16, shape [2560]
+- `L.N.self_attn.o_proj.trellis`
+  - count 12, dtype I16, shape [384, 160, 64]
+- `L.N.self_attn.q_norm.weight`
+  - count 12, dtype BF16, shape [256]
+- `L.N.self_attn.q_proj.mul1`
+  - count 12, dtype I32, shape []
+- `L.N.self_attn.q_proj.suh`
+  - count 12, dtype F16, shape [2560]
+- `L.N.self_attn.q_proj.svh`
+  - count 12, dtype F16, shape [12288]
+- `L.N.self_attn.q_proj.trellis`
+  - count 12, dtype I16, shape [160, 768, 64]
+- `L.N.self_attn.v_proj.mul1`
+  - count 12, dtype I32, shape []
+- `L.N.self_attn.v_proj.suh`
+  - count 12, dtype F16, shape [2560]
+- `L.N.self_attn.v_proj.svh`
+  - count 12, dtype F16, shape [512]
+- `L.N.self_attn.v_proj.trellis`
+  - count 12, dtype I16, shape [160, 32, 64]
+- `lm_head.mul1`
+  - count 1, dtype I32, shape []
+- `lm_head.suh`
+  - count 1, dtype F16, shape [2560]
+- `lm_head.svh`
+  - count 1, dtype F16, shape [248320]
+- `lm_head.trellis`
+  - count 1, dtype I16, shape [160, 15520, 64]
+- `model.language_model.embed_tokens.weight`
+  - count 1, dtype BF16, shape [248320, 2560]
+- `model.language_model.hyper_connection_mixer.hc_norm.weight`
+  - count 1, dtype F16, shape [10240]
+- `model.language_model.hyper_connection_mixer.input_mix_weight_down.weight`
+  - count 1, dtype F16, shape [320, 10240]
+- `model.language_model.hyper_connection_mixer.input_mix_weight_up.weight`
+  - count 1, dtype F16, shape [10240, 320]
+- `mtp.fc_embedding.mul1`
+  - count 1, dtype I32, shape []
+- `mtp.fc_embedding.suh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.fc_embedding.svh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.fc_embedding.trellis`
+  - count 1, dtype I16, shape [160, 160, 48]
+- `mtp.fc_hidden.mul1`
+  - count 1, dtype I32, shape []
+- `mtp.fc_hidden.suh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.fc_hidden.svh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.fc_hidden.trellis`
+  - count 1, dtype I16, shape [160, 160, 48]
+- `mtp.layers.N.attn_hyper_connection.block_inject_weight.weight`
+  - count 1, dtype F16, shape [4, 10240]
+- `mtp.layers.N.attn_hyper_connection.hc_norm.weight`
+  - count 1, dtype F16, shape [10240]
+- `mtp.layers.N.attn_hyper_connection.input_mix_weight_down.weight`
+  - count 1, dtype F16, shape [320, 10240]
+- `mtp.layers.N.attn_hyper_connection.input_mix_weight_up.weight`
+  - count 1, dtype F16, shape [10240, 320]
+- `mtp.layers.N.mlp.experts.E.down_proj.mul1`
+  - count 512, dtype I32, shape []
+- `mtp.layers.N.mlp.experts.E.down_proj.suh`
+  - count 512, dtype F16, shape [640]
+- `mtp.layers.N.mlp.experts.E.down_proj.svh`
+  - count 512, dtype F16, shape [2560]
+- `mtp.layers.N.mlp.experts.E.down_proj.trellis`
+  - count 512, dtype I16, shape [40, 160, 32]
+- `mtp.layers.N.mlp.experts.E.gate_proj.mul1`
+  - count 512, dtype I32, shape []
+- `mtp.layers.N.mlp.experts.E.gate_proj.suh`
+  - count 512, dtype F16, shape [2560]
+- `mtp.layers.N.mlp.experts.E.gate_proj.svh`
+  - count 512, dtype F16, shape [640]
+- `mtp.layers.N.mlp.experts.E.gate_proj.trellis`
+  - count 512, dtype I16, shape [160, 40, 32]
+- `mtp.layers.N.mlp.experts.E.up_proj.mul1`
+  - count 512, dtype I32, shape []
+- `mtp.layers.N.mlp.experts.E.up_proj.suh`
+  - count 512, dtype F16, shape [2560]
+- `mtp.layers.N.mlp.experts.E.up_proj.svh`
+  - count 512, dtype F16, shape [640]
+- `mtp.layers.N.mlp.experts.E.up_proj.trellis`
+  - count 512, dtype I16, shape [160, 40, 32]
+- `mtp.layers.N.mlp.gate.weight`
+  - count 1, dtype F16, shape [512, 2560]
+- `mtp.layers.N.mlp.shared_expert.down_proj.mul1`
+  - count 1, dtype I32, shape []
+- `mtp.layers.N.mlp.shared_expert.down_proj.suh`
+  - count 1, dtype F16, shape [640]
+- `mtp.layers.N.mlp.shared_expert.down_proj.svh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.layers.N.mlp.shared_expert.down_proj.trellis`
+  - count 1, dtype I16, shape [40, 160, 64]
+- `mtp.layers.N.mlp.shared_expert.gate_proj.mul1`
+  - count 1, dtype I32, shape []
+- `mtp.layers.N.mlp.shared_expert.gate_proj.suh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.layers.N.mlp.shared_expert.gate_proj.svh`
+  - count 1, dtype F16, shape [640]
+- `mtp.layers.N.mlp.shared_expert.gate_proj.trellis`
+  - count 1, dtype I16, shape [160, 40, 64]
+- `mtp.layers.N.mlp.shared_expert.up_proj.mul1`
+  - count 1, dtype I32, shape []
+- `mtp.layers.N.mlp.shared_expert.up_proj.suh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.layers.N.mlp.shared_expert.up_proj.svh`
+  - count 1, dtype F16, shape [640]
+- `mtp.layers.N.mlp.shared_expert.up_proj.trellis`
+  - count 1, dtype I16, shape [160, 40, 64]
+- `mtp.layers.N.mlp.shared_expert_gate.weight`
+  - count 1, dtype F16, shape [1, 2560]
+- `mtp.layers.N.mlp_hyper_connection.block_inject_weight.weight`
+  - count 1, dtype F16, shape [4, 10240]
+- `mtp.layers.N.mlp_hyper_connection.hc_norm.weight`
+  - count 1, dtype F16, shape [10240]
+- `mtp.layers.N.mlp_hyper_connection.input_mix_weight_down.weight`
+  - count 1, dtype F16, shape [320, 10240]
+- `mtp.layers.N.mlp_hyper_connection.input_mix_weight_up.weight`
+  - count 1, dtype F16, shape [10240, 320]
+- `mtp.layers.N.self_attn.indexer.index_qk_proj.mul1`
+  - count 1, dtype I32, shape []
+- `mtp.layers.N.self_attn.indexer.index_qk_proj.suh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.layers.N.self_attn.indexer.index_qk_proj.svh`
+  - count 1, dtype F16, shape [640]
+- `mtp.layers.N.self_attn.indexer.index_qk_proj.trellis`
+  - count 1, dtype I16, shape [160, 40, 32]
+- `mtp.layers.N.self_attn.indexer.k_layernorm.weight`
+  - count 1, dtype BF16, shape [128]
+- `mtp.layers.N.self_attn.indexer.q_layernorm.weight`
+  - count 1, dtype BF16, shape [128]
+- `mtp.layers.N.self_attn.k_norm.weight`
+  - count 1, dtype BF16, shape [256]
+- `mtp.layers.N.self_attn.k_proj.mul1`
+  - count 1, dtype I32, shape []
+- `mtp.layers.N.self_attn.k_proj.suh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.layers.N.self_attn.k_proj.svh`
+  - count 1, dtype F16, shape [512]
+- `mtp.layers.N.self_attn.k_proj.trellis`
+  - count 1, dtype I16, shape [160, 32, 64]
+- `mtp.layers.N.self_attn.o_proj.mul1`
+  - count 1, dtype I32, shape []
+- `mtp.layers.N.self_attn.o_proj.suh`
+  - count 1, dtype F16, shape [6144]
+- `mtp.layers.N.self_attn.o_proj.svh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.layers.N.self_attn.o_proj.trellis`
+  - count 1, dtype I16, shape [384, 160, 64]
+- `mtp.layers.N.self_attn.q_norm.weight`
+  - count 1, dtype BF16, shape [256]
+- `mtp.layers.N.self_attn.q_proj.mul1`
+  - count 1, dtype I32, shape []
+- `mtp.layers.N.self_attn.q_proj.suh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.layers.N.self_attn.q_proj.svh`
+  - count 1, dtype F16, shape [12288]
+- `mtp.layers.N.self_attn.q_proj.trellis`
+  - count 1, dtype I16, shape [160, 768, 64]
+- `mtp.layers.N.self_attn.v_proj.mul1`
+  - count 1, dtype I32, shape []
+- `mtp.layers.N.self_attn.v_proj.suh`
+  - count 1, dtype F16, shape [2560]
+- `mtp.layers.N.self_attn.v_proj.svh`
+  - count 1, dtype F16, shape [512]
+- `mtp.layers.N.self_attn.v_proj.trellis`
+  - count 1, dtype I16, shape [160, 32, 64]
+- `mtp.pre_fc_norm_embedding.weight`
+  - count 1, dtype BF16, shape [2560]
+- `mtp.pre_fc_norm_hidden.weight`
+  - count 1, dtype F16, shape [10240]
+
+## Placement plan (fully resident; no expert streaming)
+
+| region | content | bytes |
+|---|---|---|
+| routed experts | | 31.31 GB |
+| dense/attn/hc | | 4.55 GB |
+| not loaded | | 0.45 GB |
+| mtp | | 0.06 GB |
+
+## Special cases
+
+- `L.1.ple.ple_embedding.ngram_embedding.shard_{0..127}` live in **ngram_embedding.safetensors**,
+  not in the 5 model shards: 26.24 GB, mmap from host RAM, gather per token.
+- `mtp.hyper_connection_mixer.*` (3 tensors) live in **mtp_hyper_connection_mixer_patch.safetensors**.
+- `q_proj` is `[12288 -> 2560]`: 6144 q (24 heads x 256) interleaved with a 6144 gate.
+- `in_proj_qkv` is `[10240 -> 2560]`: q 16x128 = 2048, k 16x128 = 2048, v 48x128 = 6144.
+- `indexer.index_qk_proj` is `[640 -> 2560]`: 4 indexer heads x 128 q + 1 x 128 k, fused.
+- No final model norm; `hyper_connection_mixer` (combine-less) precedes `lm_head`.
+- No router bias tensors (unlike GLM): `mlp.gate.weight` only, plus `shared_expert_gate`.

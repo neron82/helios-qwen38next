@@ -1,0 +1,13 @@
+# Build output (top level and the standalone kernel test builds)
+build/
+src/cuda/*/build/
+
+# Engine runtime artefacts
+.helios.census
+*.nsys-rep
+*.sqlite
+*.ncu-rep
+
+# Python bytecode from the test harness
+__pycache__/
+*.pyc
